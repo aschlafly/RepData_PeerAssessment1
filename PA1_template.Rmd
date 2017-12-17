@@ -5,21 +5,212 @@ output:
     keep_md: true
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(lubridate)
+```
 
 ## Loading and preprocessing the data
 
+### 1. Read the data
+Download the data in .zip format, unzip the file, and read it in with the
+following commands.
+
+```{r read}
+dataurl <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
+zipfile <- "activity.zip"
+datafile <- "activity.csv"
+download.file(dataurl, zipfile)
+unzip(zipfile, datafile)
+activity <- read.csv(datafile)
+```
+
+The object "activity" contains the data read directly from the downloaded file.
+Let's look at the structure and the head of activity:
+
+```{r look}
+str(activity)
+head(activity, n = 15)
+maxinterval <- max(activity$interval)
+maxinterval
+```
+
+## 2. Transform the data as necessary into a format suitable for the analysis
+As you can see, the variable "interval" goes from 0 to 55 then jumps to 100.
+The maximum value is `r maxinterval` 
+This is because interval is an integer of up to four digits, with the format
+hhmm, where the thousands and hundreds places are the two-digit hour, and the
+tens and ones digits are the two-digit minute that starts the five minute 
+interval.
+
+
+In order to make interval more useful, we can convert the four-digit
+integer version of interval to a POSIX time variable as follows:
+
+```{r converttime}
+allintervals <- as.integer(names(table(activity$interval)))
+hours <- floor(allintervals/100)
+mins <- activity$interval - hours * 100
+hoursmins <- paste(hours, mins, sep = ":")
+timeints <- as.POSIXct(hm(hoursmins), origin = "1970-01-01", tz = "GMT")
+activitymod <- transmute(activity, steps = steps, timeint = timeints)
+intconvert <- data.frame(interval=allintervals, timeint=as.POSIXct(timeints))
+```
 
 
 ## What is mean total number of steps taken per day?
+## 1. Calculate the total number of steps taken per day
+
+Let's group the activity data by date, then sum by date, and call the
+resulting dataframe "days". Then look at days to see check the format, and look
+at the summary of days to get some basic information about the dataframe.
+
+``` {r totstepsperday}
+days <- group_by(activity, date) %>% 
+    summarize(tot.steps.per.day = sum(steps, na.rm = TRUE))
+head(days)
+summary(days)
+```
+
+## 2. Make histogram (vs. barchart) of total steps per day
+
+Histograms and barcharts are easy to confuse. Let's look at a histogram and a
+barchart of the data to see the difference. 
+```{r histvsbar}
+hist(days$tot.steps.per.day, 
+     breaks = 10, 
+     xlab = "Steps per day", 
+     main = "Histogram of steps taken per day")
+barplot(days$tot.steps.per.day,
+        xlab = "Steps per day",
+        names.arg = days$date,
+        main = "Barplot of steps taken per day")
+
+```
+
+So the difference is that barchart simply plots the value for each day, while
+histogram groups the number of steps into "buckets" and plots the number of days
+in each bucket ot get a sense of the frequency that different numbers of steps
+occur.
+
+## 3. Calculate and report mean and median steps per day
+
+```{r summarizetotsteps}
+summary(days$tot.steps.per.day)
+```
+
+```{r calcmeanmediansteps, echo = FALSE, include = FALSE}
+mean.tot.steps.per.day <- round(mean(days$tot.steps.per.day))
+median.tot.steps.per.day <- median(days$tot.steps.per.day)
+```
+
+From the table above, it can be seen that the mean number of steps taken per day
+is `r mean.tot.steps.per.day` and the median is `r median.tot.steps.per.day`.
 
 
 
 ## What is the average daily activity pattern?
 
+First, break up the activity data into interval, then take the mean value
+for each interval (skipping NAs). This results in an average for each value of
+interval (0-55, 100-155, etc.)
+```{r summarizeintervals}
+intervals <- group_by(activity, interval) %>%
+    summarize(mean.steps.per.int = mean(steps, na.rm = TRUE))
+```
+
+In order to plot normally, interpreting intervals as time values and avoiding
+jumps between 55 and 100, between 155 and 200, etc., convert the intervals to 
+actual times:
+```{r plotintervalavg}
+intervalsmod <- merge(intervals,intconvert)
+plot(intervalsmod$timeint, intervalsmod$mean.steps.per.int, type = "l")
+```
+
+Which 5-minute interval, on average across all the days in the dataset
+contains the maximum number of steps?
+
+```{r maxintervalsteps}
+maxsteps <- max(intervals$mean.steps.per.int)
+whichmax <- which(intervals$mean.steps.per.int == maxsteps)
+maxint <- intervals[whichmax,1][[1]]
+```
+So the interval with the maximum average steps per day is `r round(maxsteps)`
+which occurs between `r maxint` and `r maxint + 5`
+
 
 
 ## Imputing missing values
 
+The number of NAs, the total number of records, and the rate of occurance of
+NAs is as follows:
+```{r nafreq}
+sum(is.na(activity$steps))
+length(activity$steps)
+sum(is.na(activity$steps))/length(activity$steps)
+```
 
+``` {r imputetest}
+imputedactivity <- activity
+imputedactivity <- merge(activity, intervals)
+
+nasteps <- is.na(imputedactivity$steps)
+imputedactivity$steps[nasteps] <- 
+    imputedactivity$mean.steps.per.int[nasteps]
+imputedactivity <- select(imputedactivity, -mean.steps.per.int)
+
+daysimputed <- group_by(imputedactivity, date) %>% 
+    summarize(tot.steps.per.day = sum(steps, na.rm = TRUE))
+head(daysimputed)
+summary(daysimputed)
+
+summary(daysimputed$tot.steps.per.day)
+mean.tot.steps.per.day.imp <- mean(daysimputed$tot.steps.per.day)
+median.tot.steps.per.day.imp <- median(daysimputed$tot.steps.per.day)
+
+hist(daysimputed$tot.steps.per.day, 
+     breaks = 10, 
+     xlab = "Steps per day", 
+     main = "Histogram of steps taken per day (imputed)",
+     ylim = c(0,25))
+
+hist(days$tot.steps.per.day, 
+     breaks = 10, 
+     xlab = "Steps per day", 
+     main = "Histogram of steps taken per day",
+     ylim = c(0,25))
+
+
+daysdiff <- merge(days, daysimputed, by = "date")
+daysdiff
+```
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+``` {r weekdays}
+activityweekend <- mutate(activity, daynum = wday(date))
+
+weekends <- data.frame(daynum = 1:7, daytype = factor(c("weekend", "weekday", 
+                        "weekday", "weekday", "weekday", "weekday", "weekend")))
+
+activityclassifieddays <- merge(activityweekend, weekends)
+
+weekdays <- group_by(days, weekday = as.POSIXlt(ymd(days$date))$wday) %>%
+    summarize(weeksteps = mean(tot.steps.per.day))
+
+weekendactivitybyint <- filter(activity, wday(ymd(date)) %in% c(1,7)) %>%
+    group_by(interval) %>%
+    summarize(mean.steps.per.int = mean(steps, na.rm = TRUE))
+weekdayactivitybyint <- filter(activity, wday(ymd(date)) %in% c(2,3,4,5,6)) %>%
+    group_by(interval) %>%
+    summarize(mean.steps.per.int = mean(steps, na.rm = TRUE))
+
+daytypeactivitybyint <- 
+    group_by(activityclassifieddays, interval) %>%
+    group_by(daytype, add = TRUE) %>%
+    summarize(mean.steps.per.int = mean( mean(steps, na.rm = TRUE)))
+```
+
+
+
