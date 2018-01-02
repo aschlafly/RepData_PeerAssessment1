@@ -273,6 +273,3 @@ with(intervals.mod.wend,
      type = "l"))
 
 ```
-
-
-

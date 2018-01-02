@@ -430,6 +430,3 @@ with(intervals.mod.wend,
 ```
 
 ![](PA1_template_files/figure-html/plotweekendvsweekday-1.png)<!-- -->
-
-
-

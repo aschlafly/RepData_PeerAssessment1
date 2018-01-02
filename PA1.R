@@ -107,25 +107,6 @@ daysdiff
 
 ## weekdays
 
-##weekdays <- group_by(days, weekday = as.POSIXlt(ymd(days$date))$wday) %>%
-##    summarize(weeksteps = mean(tot.steps.per.day))
-
-##weekendactivitybyint <- filter(activity, wday(ymd(date)) %in% c(1,7)) %>%
-##    group_by(interval) %>%
-##    summarize(mean.steps.per.int = mean(steps, na.rm = TRUE))
-##weekdayactivitybyint <- filter(activity, wday(ymd(date)) %in% c(2,3,4,5,6)) %>%
-##    group_by(interval) %>%
-##    summarize(mean.steps.per.int = mean(steps, na.rm = TRUE))
-
-##activityclassifieddays <- merge(activityweekend, weekends)
-
-##daytypeactivitybyint <- 
-##    group_by(activityclassifieddays, interval) %>%
-##    group_by(daytype, add = TRUE) %>%
-##    summarize(mean.steps.per.int = mean( mean(steps, na.rm = TRUE)))
-
-## from work computer
-
 intervals.wend <- group_by(activity, interval) %>%
     group_by(wend = is.weekend(date), add = TRUE) %>%
     summarize(mean.steps.per.int = mean(steps, na.rm = TRUE))
