@@ -1,6 +1,7 @@
 library(dplyr)
 library(lubridate)
 library(lattice)
+library(chron)
 
 ## Download the data in .zip format, unzip the file, and read it in 
 
@@ -100,6 +101,49 @@ hist(days$tot.steps.per.day,
 
 
 daysdiff <- merge(days, daysimputed, by = "date")
+daysdiff
 
 
+
+## weekdays
+
+##weekdays <- group_by(days, weekday = as.POSIXlt(ymd(days$date))$wday) %>%
+##    summarize(weeksteps = mean(tot.steps.per.day))
+
+##weekendactivitybyint <- filter(activity, wday(ymd(date)) %in% c(1,7)) %>%
+##    group_by(interval) %>%
+##    summarize(mean.steps.per.int = mean(steps, na.rm = TRUE))
+##weekdayactivitybyint <- filter(activity, wday(ymd(date)) %in% c(2,3,4,5,6)) %>%
+##    group_by(interval) %>%
+##    summarize(mean.steps.per.int = mean(steps, na.rm = TRUE))
+
+##activityclassifieddays <- merge(activityweekend, weekends)
+
+##daytypeactivitybyint <- 
+##    group_by(activityclassifieddays, interval) %>%
+##    group_by(daytype, add = TRUE) %>%
+##    summarize(mean.steps.per.int = mean( mean(steps, na.rm = TRUE)))
+
+## from work computer
+
+intervals.wend <- group_by(activity, interval) %>%
+    group_by(wend = is.weekend(date), add = TRUE) %>%
+    summarize(mean.steps.per.int = mean(steps, na.rm = TRUE))
+
+intervals.mod.wend <- merge(intervals.wend, intconvert)
+
+## Convert is.weekend() = TRUE to the character string "Weekend" and FALSE to
+## "Weekday" to be able to group properly.
+
+intervals.mod.wend$wend <- 
+    factor(intervals.mod.wend$wend, 
+           levels = c(FALSE, TRUE), 
+           labels = c("Weekday", "Weekend"))
+
+with(intervals.mod.wend,
+     xyplot(mean.steps.per.int ~ timeint | wend, 
+     layout = c(1,2),
+     xlab = "Time Interval (5-minute buckets)",
+     ylab = "Mean Number of Steps per 5-minute Interval",
+     type = "l"))
 

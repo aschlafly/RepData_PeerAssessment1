@@ -1,17 +1,6 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+# Reproducible Research: Peer Assessment 1
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-library(dplyr)
-library(lubridate)
-library(lattice)
-library(chron)
-```
+
 
 ## Loading and preprocessing the data
 
@@ -19,7 +8,8 @@ library(chron)
 Download the data in .zip format, unzip the file, and read it in with the
 following commands.
 
-```{r read}
+
+```r
 dataurl <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
 zipfile <- "activity.zip"
 datafile <- "activity.csv"
@@ -31,16 +21,53 @@ activity <- read.csv(datafile)
 The object "activity" contains the data read directly from the downloaded file.
 Let's look at the structure and the head of activity:
 
-```{r look}
+
+```r
 str(activity)
+```
+
+```
+## 'data.frame':	17568 obs. of  3 variables:
+##  $ steps   : int  NA NA NA NA NA NA NA NA NA NA ...
+##  $ date    : Factor w/ 61 levels "2012-10-01","2012-10-02",..: 1 1 1 1 1 1 1 1 1 1 ...
+##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
+```
+
+```r
 head(activity, n = 15)
+```
+
+```
+##    steps       date interval
+## 1     NA 2012-10-01        0
+## 2     NA 2012-10-01        5
+## 3     NA 2012-10-01       10
+## 4     NA 2012-10-01       15
+## 5     NA 2012-10-01       20
+## 6     NA 2012-10-01       25
+## 7     NA 2012-10-01       30
+## 8     NA 2012-10-01       35
+## 9     NA 2012-10-01       40
+## 10    NA 2012-10-01       45
+## 11    NA 2012-10-01       50
+## 12    NA 2012-10-01       55
+## 13    NA 2012-10-01      100
+## 14    NA 2012-10-01      105
+## 15    NA 2012-10-01      110
+```
+
+```r
 maxinterval <- max(activity$interval)
 maxinterval
 ```
 
+```
+## [1] 2355
+```
+
 ## 2. Transform the data as necessary into a format suitable for the analysis
 As you can see, the variable "interval" goes from 0 to 55 then jumps to 100.
-The maximum value is `r maxinterval` 
+The maximum value is 2355 
 This is because interval is an integer of up to four digits, with the format
 hhmm, where the thousands and hundreds places are the two-digit hour, and the
 tens and ones digits are the two-digit minute that starts the five minute 
@@ -52,7 +79,8 @@ integer version of interval to a POSIX time variable as follows. The resulting
 table intconvert can be used with merge to add a column in which the interval
 is converted to a POSIX time:
 
-```{r converttime}
+
+```r
 allintervals <- as.integer(names(table(activity$interval)))
 hours <- floor(allintervals/100)
 mins <- activity$interval - hours * 100
@@ -70,28 +98,62 @@ Let's group the activity data by date, then sum by date, and call the
 resulting dataframe "days". Then look at days to see check the format, and look
 at the summary of days to get some basic information about the dataframe.
 
-``` {r totstepsperday}
+
+```r
 days <- group_by(activity, date) %>% 
     summarize(tot.steps.per.day = sum(steps, na.rm = TRUE))
 head(days)
+```
+
+```
+## # A tibble: 6 x 2
+##         date tot.steps.per.day
+##       <fctr>             <int>
+## 1 2012-10-01                 0
+## 2 2012-10-02               126
+## 3 2012-10-03             11352
+## 4 2012-10-04             12116
+## 5 2012-10-05             13294
+## 6 2012-10-06             15420
+```
+
+```r
 summary(days)
+```
+
+```
+##          date    tot.steps.per.day
+##  2012-10-01: 1   Min.   :    0    
+##  2012-10-02: 1   1st Qu.: 6778    
+##  2012-10-03: 1   Median :10395    
+##  2012-10-04: 1   Mean   : 9354    
+##  2012-10-05: 1   3rd Qu.:12811    
+##  2012-10-06: 1   Max.   :21194    
+##  (Other)   :55
 ```
 
 ## 2. Make histogram (vs. barchart) of total steps per day
 
 Histograms and barcharts are easy to confuse. Let's look at a histogram and a
 barchart of the data to see the difference. 
-```{r histvsbar}
+
+```r
 hist(days$tot.steps.per.day, 
      breaks = 10, 
      xlab = "Steps per day", 
      main = "Histogram of steps taken per day")
+```
+
+![](PA1_template_files/figure-html/histvsbar-1.png)<!-- -->
+
+```r
 barplot(days$tot.steps.per.day,
         xlab = "Steps per day",
         names.arg = days$date,
         main = "Barplot of steps taken per day")
-
 ```
+
+![](PA1_template_files/figure-html/histvsbar-2.png)<!-- -->
 
 So the difference is that barchart simply plots the value for each day, while
 histogram groups the number of steps into "buckets" and plots the number of days
@@ -100,17 +162,20 @@ occur.
 
 ## 3. Calculate and report mean and median steps per day
 
-```{r summarizetotsteps}
+
+```r
 summary(days$tot.steps.per.day)
 ```
 
-```{r calcmeanmediansteps, echo = FALSE, include = FALSE}
-mean.tot.steps.per.day <- round(mean(days$tot.steps.per.day))
-median.tot.steps.per.day <- median(days$tot.steps.per.day)
+```
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##       0    6778   10395    9354   12811   21194
 ```
 
+
+
 From the table above, it can be seen that the mean number of steps taken per day
-is `r mean.tot.steps.per.day` and the median is `r median.tot.steps.per.day`.
+is 9354 and the median is 10395.
 
 
 
@@ -119,7 +184,8 @@ is `r mean.tot.steps.per.day` and the median is `r median.tot.steps.per.day`.
 First, break up the activity data into interval, then take the mean value
 for each interval (skipping NAs). This results in an average for each value of
 interval (0-55, 100-155, etc.)
-```{r summarizeintervals}
+
+```r
 intervals <- group_by(activity, interval) %>%
     summarize(mean.steps.per.int = mean(steps, na.rm = TRUE))
 ```
@@ -127,21 +193,25 @@ intervals <- group_by(activity, interval) %>%
 In order to plot normally, interpreting intervals as time values and avoiding
 jumps between 55 and 100, between 155 and 200, etc., convert the intervals to 
 actual times:
-```{r plotintervalavg}
+
+```r
 intervalsmod <- merge(intervals,intconvert)
 plot(intervalsmod$timeint, intervalsmod$mean.steps.per.int, type = "l")
 ```
 
+![](PA1_template_files/figure-html/plotintervalavg-1.png)<!-- -->
+
 Which 5-minute interval, on average across all the days in the dataset
 contains the maximum number of steps?
 
-```{r maxintervalsteps}
+
+```r
 maxsteps <- max(intervals$mean.steps.per.int)
 whichmax <- which(intervals$mean.steps.per.int == maxsteps)
 maxint <- intervals[whichmax,1][[1]]
 ```
-So the interval with the maximum average steps per day is `r round(maxsteps)`
-which occurs between `r maxint` and `r maxint + 5`
+So the interval with the maximum average steps per day is 206
+which occurs between 835 and 840
 
 
 
@@ -149,10 +219,29 @@ which occurs between `r maxint` and `r maxint + 5`
 
 The number of NAs, the total number of records, and the rate of occurance of
 NAs is as follows:
-```{r nafreq}
+
+```r
 sum(is.na(activity$steps))
+```
+
+```
+## [1] 2304
+```
+
+```r
 length(activity$steps)
+```
+
+```
+## [1] 17568
+```
+
+```r
 sum(is.na(activity$steps))/length(activity$steps)
+```
+
+```
+## [1] 0.1311475
 ```
 
 Now I will create a dataframe called imputedactivity (to maintain the integrity
@@ -160,13 +249,25 @@ of the original dataframe called activity). In that dataframe, I will first add
 in a column which contains the average number of steps in each interval, where
 NAs were excluded. These averages were calculated earlier and stored in the 
 dataframe intervals.
-``` {r addmeanbyint}
+
+```r
 imputedactivity <- activity
 imputedactivity <- merge(activity, intervals)
 head(imputedactivity)
 ```
 
-``` {r imputed}
+```
+##   interval steps       date mean.steps.per.int
+## 1        0    NA 2012-10-01           1.716981
+## 2        0     0 2012-11-23           1.716981
+## 3        0     0 2012-10-28           1.716981
+## 4        0     0 2012-11-06           1.716981
+## 5        0     0 2012-11-24           1.716981
+## 6        0     0 2012-11-15           1.716981
+```
+
+
+```r
 nasteps <- is.na(imputedactivity$steps)
 imputedactivity$steps[nasteps] <- 
     imputedactivity$mean.steps.per.int[nasteps]
@@ -179,8 +280,17 @@ daysimputed <- group_by(imputedactivity, date) %>%
 Now I have a dataframe in which the NA values have been replaced by the mean
 number of steps for that interval.
 
-```{r imputedstats}
+
+```r
 summary(daysimputed$tot.steps.per.day)
+```
+
+```
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##      41    9819   10766   10766   12811   21194
+```
+
+```r
 mean.tot.steps.per.day.imp <- mean(daysimputed$tot.steps.per.day)
 median.tot.steps.per.day.imp <- median(daysimputed$tot.steps.per.day)
 
@@ -189,7 +299,11 @@ hist(daysimputed$tot.steps.per.day,
      xlab = "Steps per day", 
      main = "Histogram of steps taken per day (imputed)",
      ylim = c(0,25))
+```
 
+![](PA1_template_files/figure-html/imputedstats-1.png)<!-- -->
+
+```r
 hist(days$tot.steps.per.day, 
      breaks = 10, 
      xlab = "Steps per day", 
@@ -197,24 +311,28 @@ hist(days$tot.steps.per.day,
      ylim = c(0,25))
 ```
 
+![](PA1_template_files/figure-html/imputedstats-2.png)<!-- -->
+
 So the histograms can be seen to be different because of the absence of NA
 values. This leads to some days with zero steps (due to NAs) having an average
 number of steps. The mean steps per day with imputed data is 
-`r format(mean.tot.steps.per.day.imp, scientific = FALSE, digits = 0)` vs.
-`r mean.tot.steps.per.day` for the raw data.
+10766 vs.
+9354 for the raw data.
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
 In order to check this, we need to break up the data. The following groups
 activity by interval, then summarizes dates as weekend days or not (using the 
 is.weekend() function in the chron library), then takes the means.
-``` {r convertdaysandtakemeans}
+
+```r
 intervals.wend <- group_by(activity, interval) %>%
     group_by(wend = is.weekend(date), add = TRUE) %>%
     summarize(mean.steps.per.int = mean(steps, na.rm = TRUE))
 ```
 
-``` {r convertintervals}
+
+```r
 intervals.mod.wend <- merge(intervals.wend, intconvert)
 ```
 
@@ -222,7 +340,8 @@ In order to make the plots have appropriate chart titles, the following will
 convert is.weekend() = TRUE to the character string "Weekend" and FALSE to 
 "Weekday".
 
-``` {r convertweekendTFtonames}
+
+```r
 intervals.mod.wend$wend <- 
     factor(intervals.mod.wend$wend, 
            levels = c(FALSE, TRUE), 
@@ -232,15 +351,17 @@ intervals.mod.wend$wend <-
 Finally, use the lattice plotting to make up-and-down plots of the average 
 number of steps per 5-minute time bucket for weekends vs. weekdays.
 
-```{r plotweekendvsweekday}
+
+```r
 with(intervals.mod.wend,
      xyplot(mean.steps.per.int ~ timeint | wend, 
      layout = c(1,2),
      xlab = "Time Interval (5-minute buckets)",
      ylab = "Mean Number of Steps per 5-minute Interval",
      type = "l"))
-
 ```
+
+![](PA1_template_files/figure-html/plotweekendvsweekday-1.png)<!-- -->
 
 
 
